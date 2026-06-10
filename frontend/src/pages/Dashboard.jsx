@@ -4,10 +4,11 @@ import api from '../utils/api';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import Chart from '../components/Chart';
+import SettingsPanel from '../components/SettingsPanel';
 import { TrendingUp, TrendingDown, Wallet, BarChart3, Receipt, Plus } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, updateSettings } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -62,8 +63,9 @@ const Dashboard = () => {
   };
 
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-  const mockIncome = 5000;
-  const balance = mockIncome - totalExpenses;
+  const userIncome = user?.income || 0;
+  const startingBalance = user?.balance || 0;
+  const balance = startingBalance + userIncome - totalExpenses;
 
   if (loading) {
     return (
@@ -94,7 +96,7 @@ const Dashboard = () => {
           </div>
           <div className="stat-content">
             <span className="stat-title">Income</span>
-            <span className="stat-value income">${mockIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span className="stat-value income">${userIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </div>
         </div>
         <div className="stat-card glass-panel expense-card">
@@ -150,6 +152,7 @@ const Dashboard = () => {
         </div>
 
         <div>
+          <SettingsPanel />
           <div className="glass-panel panel" style={{ position: 'sticky', top: '5rem' }}>
             <div className="section-header">
               <div className="section-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success-light)' }}>

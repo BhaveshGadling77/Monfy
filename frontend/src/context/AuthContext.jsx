@@ -30,6 +30,13 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
   };
 
+  const updateSettings = async (income, balance) => {
+    const res = await api.put('/users/settings', { income, balance });
+    const updatedUser = { ...user, income: res.data.income, balance: res.data.balance };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -37,7 +44,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, updateSettings, loading }}>
       {children}
     </AuthContext.Provider>
   );
