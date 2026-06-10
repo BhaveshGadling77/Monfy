@@ -1,18 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 import api from '../utils/api';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import Chart from '../components/Chart';
+import { TrendingUp, TrendingDown, Wallet, BarChart3, Receipt, Plus } from 'lucide-react';
 
 const Dashboard = () => {
+  const { user } = useContext(AuthContext);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState(null);
 
   const fetchExpenses = async () => {
     try {
+      // console.log(import.meta.env);
       const res = await api.get('/expenses');
-      setExpenses(res.data);
+      if (Array.isArray(res.data)) {
+        setExpenses(res.data);
+      } else {
+        console.error('Expected array from API but got:', res.data);
+        setExpenses([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -56,47 +65,100 @@ const Dashboard = () => {
   const mockIncome = 5000;
   const balance = mockIncome - totalExpenses;
 
-  if (loading) return <div className="container">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
+  const greeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <div className="container animate-fade-in">
-      <div className="stats-grid">
-        <div className="stat-card glass-panel">
-          <span className="stat-title">Total Income</span>
-          <span className="stat-value income">${mockIncome.toFixed(2)}</span>
+      <div className="page-header">
+        <h1>{greeting()}, {user?.name?.split(' ')[0]} 👋</h1>
+        <p>Here's what's happening with your finances</p>
+      </div>
+
+      <div className="stats-grid stagger-children">
+        <div className="stat-card glass-panel income-card">
+          <div className="stat-icon income">
+            <TrendingUp size={22} />
+          </div>
+          <div className="stat-content">
+            <span className="stat-title">Income</span>
+            <span className="stat-value income">${mockIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          </div>
         </div>
-        <div className="stat-card glass-panel">
-          <span className="stat-title">Total Expenses</span>
-          <span className="stat-value expense">${totalExpenses.toFixed(2)}</span>
+        <div className="stat-card glass-panel expense-card">
+          <div className="stat-icon expense">
+            <TrendingDown size={22} />
+          </div>
+          <div className="stat-content">
+            <span className="stat-title">Expenses</span>
+            <span className="stat-value expense">${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          </div>
         </div>
-        <div className="stat-card glass-panel">
-          <span className="stat-title">Balance</span>
-          <span className="stat-value balance">${balance.toFixed(2)}</span>
+        <div className="stat-card glass-panel balance-card">
+          <div className="stat-icon balance">
+            <Wallet size={22} />
+          </div>
+          <div className="stat-content">
+            <span className="stat-title">Balance</span>
+            <span className="stat-value balance">${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          </div>
         </div>
       </div>
 
       <div className="dashboard-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Financial Reports</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="glass-panel panel">
+            <div className="section-header">
+              <div className="section-icon" style={{ background: 'rgba(99, 102, 241, 0.12)', color: 'var(--primary-light)' }}>
+                <BarChart3 size={18} />
+              </div>
+              <h3>Financial Reports</h3>
+            </div>
             <Chart expenses={expenses} />
           </div>
-          <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Recent Transactions</h3>
-            <ExpenseList 
-              expenses={expenses} 
-              onDelete={handleDeleteExpense} 
-              onEdit={setEditingExpense} 
+
+          <div className="glass-panel panel">
+            <div className="section-header">
+              <div className="section-icon" style={{ background: 'rgba(236, 72, 153, 0.12)', color: 'var(--secondary-light)' }}>
+                <Receipt size={18} />
+              </div>
+              <h3>Recent Transactions</h3>
+              {expenses.length > 0 && (
+                <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.04)', padding: '0.25rem 0.75rem', borderRadius: '20px' }}>
+                  {expenses.length} total
+                </span>
+              )}
+            </div>
+            <ExpenseList
+              expenses={expenses}
+              onDelete={handleDeleteExpense}
+              onEdit={setEditingExpense}
             />
           </div>
         </div>
+
         <div>
-          <div className="glass-panel" style={{ padding: '1.5rem', position: 'sticky', top: '2rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>
-              {editingExpense ? 'Edit Transaction' : 'Add New Transaction'}
-            </h3>
-            <ExpenseForm 
-              onAdd={handleAddExpense} 
+          <div className="glass-panel panel" style={{ position: 'sticky', top: '5rem' }}>
+            <div className="section-header">
+              <div className="section-icon" style={{ background: 'rgba(16, 185, 129, 0.12)', color: 'var(--success-light)' }}>
+                <Plus size={18} />
+              </div>
+              <h3>{editingExpense ? 'Edit Transaction' : 'New Transaction'}</h3>
+            </div>
+            <ExpenseForm
+              onAdd={handleAddExpense}
               onEdit={handleEditExpense}
               editingExpense={editingExpense}
               setEditingExpense={setEditingExpense}
