@@ -1,17 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 
 const CATEGORIES = ['Food', 'Transport', 'Entertainment', 'Shopping', 'Utilities', 'Other'];
 
-const ExpenseForm = ({ onAdd }) => {
-  const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+const ExpenseForm = ({ onAdd, onEdit, editingExpense, setEditingExpense }) => {
+  const [title, setTitle] = useState(editingExpense ? editingExpense.title : '');
+  const [amount, setAmount] = useState(editingExpense ? editingExpense.amount : '');
+  const [category, setCategory] = useState(editingExpense ? editingExpense.category : CATEGORIES[0]);
+  const [date, setDate] = useState(editingExpense ? new Date(editingExpense.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+
+  // Update local state when editingExpense prop changes
+  useEffect(() => {
+    if (editingExpense) {
+      setTitle(editingExpense.title);
+      setAmount(editingExpense.amount);
+      setCategory(editingExpense.category);
+      setDate(new Date(editingExpense.date).toISOString().split('T')[0]);
+    } else {
+      setTitle('');
+      setAmount('');
+      setCategory(CATEGORIES[0]);
+      setDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [editingExpense]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title || !amount) return;
-    onAdd({ title, amount: Number(amount), category, date });
+    
+    if (editingExpense) {
+      onEdit(editingExpense._id, { title, amount: Number(amount), category, date });
+    } else {
+      onAdd({ title, amount: Number(amount), category, date });
+    }
+    
+    setTitle('');
+    setAmount('');
+    if (setEditingExpense) setEditingExpense(null);
+  };
+
+  const cancelEdit = () => {
+    if (setEditingExpense) setEditingExpense(null);
     setTitle('');
     setAmount('');
   };
@@ -64,8 +93,13 @@ const ExpenseForm = ({ onAdd }) => {
         />
       </div>
       <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-        Add Expense
+        {editingExpense ? 'Update Expense' : 'Add Expense'}
       </button>
+      {editingExpense && (
+        <button type="button" onClick={cancelEdit} className="btn" style={{ width: '100%', marginTop: '0.5rem', border: '1px solid var(--border-color)' }}>
+          Cancel
+        </button>
+      )}
     </form>
   );
 };

@@ -3,11 +3,11 @@ import api from '../utils/api';
 import ExpenseForm from '../components/ExpenseForm';
 import ExpenseList from '../components/ExpenseList';
 import Chart from '../components/Chart';
-import { format } from 'date-fns';
 
 const Dashboard = () => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const fetchExpenses = async () => {
     try {
@@ -33,6 +33,16 @@ const Dashboard = () => {
     }
   };
 
+  const handleEditExpense = async (id, updatedData) => {
+    try {
+      const res = await api.put(`/expenses/${id}`, updatedData);
+      setExpenses(expenses.map(exp => exp._id === id ? res.data : exp));
+      setEditingExpense(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDeleteExpense = async (id) => {
     try {
       await api.delete(`/expenses/${id}`);
@@ -43,8 +53,6 @@ const Dashboard = () => {
   };
 
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-  
-  // Basic mock income for dashboard visualization
   const mockIncome = 5000;
   const balance = mockIncome - totalExpenses;
 
@@ -70,18 +78,29 @@ const Dashboard = () => {
       <div className="dashboard-grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Spending Overview</h3>
+            <h3 style={{ marginBottom: '1.5rem' }}>Financial Reports</h3>
             <Chart expenses={expenses} />
           </div>
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>Recent Transactions</h3>
-            <ExpenseList expenses={expenses} onDelete={handleDeleteExpense} />
+            <ExpenseList 
+              expenses={expenses} 
+              onDelete={handleDeleteExpense} 
+              onEdit={setEditingExpense} 
+            />
           </div>
         </div>
         <div>
           <div className="glass-panel" style={{ padding: '1.5rem', position: 'sticky', top: '2rem' }}>
-            <h3 style={{ marginBottom: '1.5rem' }}>Add New Transaction</h3>
-            <ExpenseForm onAdd={handleAddExpense} />
+            <h3 style={{ marginBottom: '1.5rem' }}>
+              {editingExpense ? 'Edit Transaction' : 'Add New Transaction'}
+            </h3>
+            <ExpenseForm 
+              onAdd={handleAddExpense} 
+              onEdit={handleEditExpense}
+              editingExpense={editingExpense}
+              setEditingExpense={setEditingExpense}
+            />
           </div>
         </div>
       </div>
